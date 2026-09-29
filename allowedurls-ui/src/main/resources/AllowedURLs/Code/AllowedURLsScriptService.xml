@@ -1,0 +1,227 @@
+<?xml version="1.1" encoding="UTF-8"?>
+
+<!--
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+-->
+
+<xwikidoc version="1.7" reference="AllowedURLs.Code.AllowedURLsScriptService" locale="">
+  <web>AllowedURLs.Code</web>
+  <name>AllowedURLsScriptService</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <creator>xwiki:XWiki.Admin</creator>
+  <parent>WebHome</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <version>1.1</version>
+  <title>AllowedURLsScriptService</title>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>true</hidden>
+  <content/>
+  <object>
+    <name>AllowedURLs.Code.AllowedURLsScriptService</name>
+    <number>0</number>
+    <className>XWiki.ScriptComponentClass</className>
+    <guid>d142bd0f-2483-43ff-92b0-8ada4050b3c0</guid>
+    <class>
+      <name>XWiki.ScriptComponentClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <scope>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>scope</name>
+        <number>2</number>
+        <prettyName>Scope</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>|wiki|global|user</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </scope>
+      <script_content>
+        <disabled>0</disabled>
+        <editor>Text</editor>
+        <name>script_content</name>
+        <number>3</number>
+        <prettyName>Script</prettyName>
+        <rows>20</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </script_content>
+      <script_language>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>script_language</name>
+        <number>1</number>
+        <prettyName>Language</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>groovy|python</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </script_language>
+    </class>
+    <property type="String">
+      <scope>global</scope>
+    </property>
+    <property type="LargeString">
+      <script_content>/*
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+package org.xwiki.scratch.scratch;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
+
+import org.slf4j.Logger;
+
+import org.xwiki.component.annotation.Component;
+import org.xwiki.model.reference.DocumentReference;
+import org.xwiki.script.service.ScriptService;
+
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.XWikiException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+@Component
+@Singleton
+@Named("allowedurls")
+public class AllowedURLsScriptService implements ScriptService
+{
+    private Pattern prefixPattern; 
+
+    @Inject
+    private Logger logger;
+
+    @Inject
+    private Provider&lt;XWikiContext&gt; contextProvider;
+
+    public void refresh()
+    {
+        // We build a mega regex containing all the allowed prefixes.
+        XWikiContext context = contextProvider.get();
+        XWiki wiki = context.getWiki();
+
+        try {
+            DocumentReference ref =
+                new DocumentReference(context.getWikiId(), List.of("AllowedURLs", "Code"), "AllowedURLs");
+            StringBuilder prefixPatternBuilder = new StringBuilder();
+            XWikiDocument allowedURLsDoc = wiki.getDocument(ref, context);
+            if (!allowedURLsDoc.isNew()) {
+                for (String prefixUntrimmed : allowedURLsDoc.getContent().split("\n")) {
+                    String prefix = prefixUntrimmed.trim();
+                    if (!prefix.isEmpty() &amp;&amp; prefix.charAt(0) != '#') {
+                        try {
+                            if (!prefix.startsWith("//") &amp;&amp; !new URI(prefix).isAbsolute()) {
+                                if (!prefix.endsWith("/")) {
+                                    prefix = prefix + "/";
+                                }
+                                addPrefix(prefixPatternBuilder, "http://" + prefix);
+                                addPrefix(prefixPatternBuilder, "https://" + prefix);
+                            } else {
+                                addPrefix(prefixPatternBuilder, prefix);
+                            }
+                        } catch (URISyntaxException e) {
+                            addPrefix(prefixPatternBuilder, prefix);
+                        }
+                    }
+                }
+            }
+            prefixPattern = Pattern.compile(prefixPatternBuilder.toString());
+        } catch (XWikiException e) {
+            logger.error("Failed to refresh the allowed URLs", e);
+        }
+    }
+    
+    private void addPrefix(StringBuilder prefixPatternBuilder, String prefix)
+    {
+        if (!prefixPatternBuilder.isEmpty()) {
+            prefixPatternBuilder.append("|");
+        }
+        prefixPatternBuilder.append("^");
+        prefixPatternBuilder.append(Pattern.quote(prefix));
+        prefixPatternBuilder.append("[\\s\\S]*");
+    }
+
+    public boolean isAllowed(String url)
+    {
+        if (prefixPattern == null) {
+            refresh();
+        }
+
+        if (prefixPattern == null) {
+            return false;
+        }
+
+        return prefixPattern.matcher(url).matches();
+    }
+}
+</script_content>
+    </property>
+    <property type="String">
+      <script_language>groovy</script_language>
+    </property>
+  </object>
+</xwikidoc>
