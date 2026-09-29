@@ -29,7 +29,7 @@
   </parent>
   <groupId>com.xwiki.allowedurls</groupId>
   <artifactId>allowed-urls</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0-rc-1</version>
   <name>Allowed URLs - Parent POM</name>
   <packaging>pom</packaging>
   <issueManagement>
@@ -40,7 +40,7 @@
     <connection>scm:git:git://github.com/xwikisas/allowedurls.git</connection>
     <developerConnection>scm:git:git@github.com:xwikisas/allowedurls.git</developerConnection>
     <url>https://github.com/xwikisas/allowedurls/tree/master</url>
-    <tag>allowedurls-1.0.0</tag>
+    <tag>allowed-urls-1.0.0-rc-1</tag>
   </scm>
   <modules>
     <module>allowedurls-ui</module>
